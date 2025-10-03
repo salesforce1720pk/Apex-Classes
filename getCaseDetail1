@@ -1,0 +1,64 @@
+public with sharing class agentCaseDetail {
+    
+    
+    public class Request {
+        @InvocableVariable(label = 'Case Id Input' required = true)
+        public Id caseId;
+    }
+    
+    
+    public class Response {
+        @InvocableVariable(label = 'Case Number Output')
+        public String varCaseNumber;
+        
+        @InvocableVariable(label = 'Case Origin Output')
+        public String caseOrigin;
+        
+        @InvocableVariable(label = 'Case Priority Output')
+        public String casePriority;
+        
+        @InvocableVariable(label = 'Case Status Output')
+        public String caseStatus;
+    }
+    
+    @InvocableMethod(
+        label = 'Get Case Detail'
+        description = 'This apex method fetches Case details for Agentforce Service Agent'
+    )
+    public static List<Response> getCaseDetail(List<Request> requests) {
+        
+        List<Response> responseList = new List<Response>();
+        
+        
+        Set<Id> ids = new Set<Id>();
+        for (Request req : requests) {
+            if (req.caseId != null) {
+                ids.add(req.caseId);
+            }
+        }
+        
+       
+        Map<Id, Case> caseMap = new Map<Id, Case>(
+            [SELECT Id, CaseNumber, Status, Priority, Origin 
+             FROM Case 
+             WHERE Id IN :ids]
+        );
+        
+        
+        for (Request req : requests) {
+            if (req.caseId != null && caseMap.containsKey(req.caseId)) {
+                Case c = caseMap.get(req.caseId);
+                
+                Response res = new Response();
+                res.varCaseNumber = c.CaseNumber;
+                res.caseOrigin   = c.Origin;
+                res.casePriority = c.Priority;
+                res.caseStatus   = c.Status;
+                
+                responseList.add(res);
+            }
+        }
+        
+        return responseList;
+    }
+}
