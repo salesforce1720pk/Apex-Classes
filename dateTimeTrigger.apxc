@@ -1,0 +1,57 @@
+trigger dateTimeOpp on Opportunity (before insert, before update) {
+    if(trigger.isInsert || trigger.isUpdate){
+        
+        for(Opportunity opp: Trigger.new){
+            //store the field value in a string
+            String userDateTime = opp.User_Date_Time__c;
+            
+            //Removing AM PM
+            if(userDateTime.contains('AM') || userDateTime.contains('PM')){
+                List<String> removeAM = userDateTime.split(' ');
+                userDateTime = removeAM[0];
+            }
+            
+            //split the time and date;
+            List<String>dateTimeSplit = userDateTime.split('-');
+            
+            //date handling
+            String userDate = dateTimeSplit[0];
+            List<String>dateSplit = userDate.split('/');
+            
+            Integer day1 = Integer.valueOf(dateSplit[0]);
+            Integer month1 = Integer.valueOf(dateSplit[1]);
+            Integer year1 = Integer.valueOf(dateSplit[2]);
+            
+            //Time format check: Whether AM or PM
+            Boolean result = dateTimeSplit[1].contains('AM') || dateTimeSplit[1].contains('PM');
+
+            //Time Handling
+            String userTime = dateTimeSplit[1];
+            List<String>timeSplit = userTime.split(':');
+            
+            
+            Integer hour = Integer.valueOf(timeSplit[0]);
+            Integer minute = Integer.valueOf(timeSplit[1]);
+            Integer secon = Integer.valueOf(timeSplit[2]);
+            
+            if(hour>24 || minute>59 ||secon>59){
+                opp.User_Date_Time__c.addError('Time is not in specific format, hover i button');
+                return;
+            }
+            
+            if(result && dateTimeSplit[1].contains('PM')){
+                if(hour == 12){
+                    hour = 0;
+                }
+                else{
+                    hour = hour +12;
+                }
+            }
+            
+            DateTime triggerDateTime = DateTime.newInstance(year1,month1,day1,hour,minute,secon);
+            opp.Trigger_Date_Time__c = triggerDateTime;
+            
+        }
+        
+    }
+}
